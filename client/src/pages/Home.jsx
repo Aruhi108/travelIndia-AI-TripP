@@ -11,36 +11,36 @@ const Home = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const featuredDestinations = [
-    {
-      id: 1,
-      name: 'Goa',
-      state: 'Goa',
-      image: 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=600&h=400&fit=crop',
-      description: 'Beautiful beaches, Portuguese heritage, and vibrant nightlife. Perfect for beach lovers and party enthusiasts.'
-    },
-    {
-      id: 2,
-      name: 'Manali',
-      state: 'Himachal Pradesh',
-      image: 'https://images.unsplash.com/photo-1580135776196-0d5376fe6d6e?w=600&h=400&fit=crop',
-      description: 'Scenic hill station in the Himalayas with adventure sports, snow-capped mountains, and serene landscapes.'
-    },
-    {
-      id: 3,
-      name: 'Jaipur',
-      state: 'Rajasthan',
-      image: 'https://images.unsplash.com/photo-1534751516642-a1af1ef26a56?w=600&h=400&fit=crop',
-      description: 'The Pink City with magnificent forts, palaces, and rich cultural heritage. A royal experience awaits.'
-    },
-    {
-      id: 4,
-      name: 'Kerala',
-      state: 'Kerala',
-      image: 'https://images.unsplash.com/photo-1580519542036-c47de6196ba5?w=600&h=400&fit=crop',
-      description: 'Backwaters, Ayurvedic treatments, and lush green landscapes. Experience God\'s Own Country.'
-    }
-  ];
+ const featuredDestinations = [
+  {
+    id: 1,
+    name: 'Goa',
+    state: 'Goa',
+    image: '/destination/goa.png',
+    description: 'Beautiful beaches, Portuguese heritage, and vibrant nightlife.'
+  },
+  {
+    id: 2,
+    name: 'Manali',
+    state: 'Himachal Pradesh',
+    image: '/destination/manali.png',
+    description: 'Scenic hill station in the Himalayas with adventure sports.'
+  },
+  {
+    id: 3,
+    name: 'Jaipur',
+    state: 'Rajasthan',
+    image: '/destination/jaipur.png',
+    description: 'The Pink City with magnificent forts and palaces.'
+  },
+  {
+    id: 4,
+    name: 'Kerala',
+    state: 'Kerala',
+    image: '/destination/kerala.png',
+    description: "Backwaters and lush green landscapes."
+  }
+];
 
  const features = [
   {
@@ -301,11 +301,11 @@ const Home = () => {
           </div>
 
           {/* Destinations Grid - Responsive */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
-            {featuredDestinations.map((destination) => (
-              <DestinationCard key={destination.id} destination={destination} />
-            ))}
-          </div>
+     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
+  {featuredDestinations.map((destination) => (
+    <DestinationCard key={destination.id} destination={destination} />
+  ))}
+</div>
 
           {/* Button - Responsive */}
           <div className="text-center mt-8 sm:mt-10 md:mt-12">
@@ -335,7 +335,7 @@ const Home = () => {
           </p>
           <Link to="/ai-assistant">
             <button className="px-5 sm:px-6 md:px-8 py-2.5 sm:py-3 md:py-4 rounded-full font-semibold text-sm sm:text-base md:text-lg bg-white text-blue-600 hover:bg-gray-100 shadow-xl transition-all duration-300 hover:scale-105">
-              🎯 Start Your AI Trip Plan
+             Start Your AI Trip Plan  →
             </button>
           </Link>
         </div>

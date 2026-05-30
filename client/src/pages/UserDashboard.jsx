@@ -171,7 +171,7 @@ const UserDashboard = () => {
             to="/ai-assistant"
             className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-colors font-semibold"
           >
-            🚀 Create New Trip
+             Create New Trip
           </Link>
         </div>
 

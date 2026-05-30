@@ -1,14 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { tripsAPI } from '../utils/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 
+import html2pdf from 'html2pdf.js';
+
+// Icons
+import {
+  ArrowLeft,
+  Save,
+  FileText,
+  MapPin,
+  Calendar,
+  Home,
+  Utensils,
+  Car,
+  Shield,
+  Backpack
+} from 'lucide-react';
+
 const ItineraryPage = () => {
   const { tripId } = useParams();
   const navigate = useNavigate();
+
   const [trip, setTrip] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const printRef = useRef();
 
   useEffect(() => {
     fetchItinerary();
@@ -17,13 +36,9 @@ const ItineraryPage = () => {
   const fetchItinerary = async () => {
     try {
       const response = await tripsAPI.getTrip(tripId);
-      if (response.success) {
-        setTrip(response.trip);
-      } else {
-        setError('Itinerary not found');
-      }
-    } catch (error) {
-      console.error('Fetch itinerary error:', error);
+      if (response.success) setTrip(response.trip);
+      else setError('Itinerary not found');
+    } catch (err) {
       setError('Failed to load itinerary');
     } finally {
       setLoading(false);
@@ -31,34 +46,44 @@ const ItineraryPage = () => {
   };
 
   const handleSaveItinerary = () => {
-    // For now, just show alert. Can be extended to save to user profile
-    alert('Itinerary saved to your trips!');
+    alert('Itinerary saved!');
   };
 
+  // ✅ REAL PDF DOWNLOAD
   const handleDownloadPDF = () => {
-    alert('PDF download feature coming soon!');
+    const element = printRef.current;
+
+    html2pdf()
+      .set({
+        margin: 0.5,
+        filename: `${trip?.destination || 'itinerary'}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+      })
+      .from(element)
+      .save();
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <LoadingSpinner text="Loading your itinerary..." />
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner text="Loading itinerary..." />
       </div>
     );
   }
 
   if (error || !trip) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-600 text-6xl mb-4">❌</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Itinerary Not Found</h2>
-          <p className="text-gray-600 mb-6">{error || 'The requested itinerary could not be found.'}</p>
+      <div className="min-h-screen flex items-center justify-center text-center">
+        <div>
+          <h2 className="text-2xl font-bold mb-2">Not Found</h2>
+          <p className="mb-4 text-gray-600">{error}</p>
           <button
             onClick={() => navigate('/ai-assistant')}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-6 py-3 bg-blue-600 text-white rounded-xl"
           >
-            Create New Itinerary
+            Create New Trip
           </button>
         </div>
       </div>
@@ -68,119 +93,122 @@ const ItineraryPage = () => {
   const { destination, state, homeLocation, itinerary } = trip;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            Your {destination} Itinerary
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 py-8">
+
+      {/* BACK BUTTON */}
+      <div className="max-w-6xl mx-auto px-4 mb-6">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-gray-700 hover:text-black"
+        >
+          <ArrowLeft size={18} />
+          Back
+        </button>
+      </div>
+
+      {/* CONTENT WRAPPER (PDF AREA) */}
+      <div ref={printRef} className="max-w-6xl mx-auto px-4 space-y-6">
+
+        {/* HEADER CARD */}
+        <div className="bg-white rounded-3xl shadow-lg p-6">
+          <h1 className="text-3xl font-bold text-gray-800">
+            {destination} Itinerary
           </h1>
-          <p className="text-lg text-gray-600 mb-4">
-            Traveling from {homeLocation} to {destination}, {state}
+
+          <p className="text-gray-600 mt-2">
+            {homeLocation} → {destination}, {state}
           </p>
-          <div className="flex justify-center space-x-4">
+
+          <div className="flex gap-3 mt-5">
             <button
               onClick={handleSaveItinerary}
-              className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
+              className="flex items-center gap-2 px-5 py-2 bg-green-600 text-white rounded-xl"
             >
-              💾 Save Itinerary
+              <Save size={16} /> Save
             </button>
+
             <button
               onClick={handleDownloadPDF}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-xl"
             >
-              📄 Download PDF
+              <FileText size={16} /> PDF
             </button>
           </div>
         </div>
 
-        {/* Itinerary Sections */}
-        <div className="space-y-6">
-          {/* Overview */}
-          <Section title="🌄 Overview" content={itinerary.overview} />
+        {/* SECTIONS */}
+        <Card title="Overview" icon={<MapPin />} text={itinerary.overview} />
+        <Card title="Best Time to Visit" icon={<Calendar />} text={itinerary.bestTime} />
 
-          {/* Best Time to Visit */}
-          <Section title="📅 Best Time to Visit" content={itinerary.bestTime} />
+        <ListCard title="Places to Visit" items={itinerary.places} icon={<MapPin />} />
 
-          {/* Places to Visit */}
-          <ListSection title="🏛️ Places to Visit" items={itinerary.places} />
-
-          {/* Hotels */}
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">🏨 Hotels & Stays</h2>
-            <div className="grid gap-4 md:grid-cols-2">
-              {itinerary.hotels.map((hotel, index) => (
-                <div key={index} className="border-l-4 border-blue-500 pl-4 py-3 bg-blue-50 rounded-r-lg">
-                  <h3 className="font-semibold text-gray-800 text-lg">{hotel.name}</h3>
-                  <p className="text-gray-600">{hotel.priceRange}</p>
-                  <p className="text-yellow-600">⭐ {hotel.rating}/5</p>
-                </div>
-              ))}
-            </div>
+        {/* HOTELS */}
+        <div className="bg-white rounded-3xl p-6 shadow">
+          <h2 className="text-xl font-bold mb-4">Hotels</h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            {itinerary.hotels.map((h, i) => (
+              <div key={i} className="p-4 border rounded-xl bg-gray-50">
+                <h3 className="font-semibold">{h.name}</h3>
+                <p className="text-gray-600">{h.priceRange}</p>
+                <p className="text-yellow-600">⭐ {h.rating}</p>
+              </div>
+            ))}
           </div>
-
-          {/* Food */}
-          <ListSection title="🍛 Local Food to Try" items={itinerary.food} />
-
-          {/* Transport */}
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">🚗 Local Transport</h2>
-            <div className="grid gap-3">
-              {itinerary.transport.map((transport, index) => (
-                <div key={index} className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="font-medium text-gray-800">{transport.type}</span>
-                  <span className="text-blue-600 font-semibold">{transport.cost}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Additional Sections */}
-          <Section title="📍 How to Reach" content={itinerary.reach} />
-          <Section title="💰 Estimated Cost" content={itinerary.estimatedCost} />
-          <Section title="🌤️ Weather Information" content={itinerary.weather} />
-          <Section title="🛡️ Safety Tips" content={itinerary.safety} />
-          <ListSection title="🎒 What to Carry" items={itinerary.carry} />
-          <ListSection title="📄 Documents Required" items={itinerary.documents} />
         </div>
 
-        {/* Action Buttons - Fixed */}
-        <div className="fixed bottom-6 right-6 space-x-4">
-          <button
-            onClick={handleSaveItinerary}
-            className="bg-green-600 text-white px-6 py-3 rounded-full shadow-lg hover:bg-green-700 transition-colors"
-          >
-            💾 Save
-          </button>
-          <button
-            onClick={handleDownloadPDF}
-            className="bg-blue-600 text-white px-6 py-3 rounded-full shadow-lg hover:bg-blue-700 transition-colors"
-          >
-            📄 PDF
-          </button>
-        </div>
+        <ListCard title="Food to Try" items={itinerary.food} icon={<Utensils />} />
+        <ListCard title="What to Carry" items={itinerary.carry} icon={<Backpack />} />
+        <ListCard title="Documents Required" items={itinerary.documents} icon={<FileText />} />
+
+        <Card title="Transport" icon={<Car />} text={itinerary.reach} />
+        <Card title="Safety Tips" icon={<Shield />} text={itinerary.safety} />
+
       </div>
+
+      {/* FLOAT ACTION BUTTONS */}
+      <div className="fixed bottom-6 right-6 flex gap-3">
+        <button
+          onClick={handleSaveItinerary}
+          className="p-4 rounded-full bg-green-600 text-white shadow-lg"
+        >
+          <Save size={18} />
+        </button>
+
+        <button
+          onClick={handleDownloadPDF}
+          className="p-4 rounded-full bg-blue-600 text-white shadow-lg"
+        >
+          <FileText size={18} />
+        </button>
+      </div>
+
     </div>
   );
 };
 
-// Reusable Section Component
-const Section = ({ title, content }) => (
-  <div className="bg-white rounded-xl shadow-lg p-6 fade-in">
-    <h2 className="text-2xl font-bold text-gray-800 mb-3">{title}</h2>
-    <p className="text-gray-700 leading-relaxed whitespace-pre-line">{content}</p>
+/* ---------- CARD ---------- */
+const Card = ({ title, text, icon }) => (
+  <div className="bg-white rounded-3xl shadow p-6">
+    <div className="flex items-center gap-2 mb-3 text-gray-700 font-semibold">
+      {icon}
+      {title}
+    </div>
+    <p className="text-gray-600 leading-relaxed">{text}</p>
   </div>
 );
 
-// Reusable List Section Component
-const ListSection = ({ title, items }) => (
-  <div className="bg-white rounded-xl shadow-lg p-6 fade-in">
-    <h2 className="text-2xl font-bold text-gray-800 mb-4">{title}</h2>
+/* ---------- LIST CARD ---------- */
+const ListCard = ({ title, items, icon }) => (
+  <div className="bg-white rounded-3xl shadow p-6">
+    <div className="flex items-center gap-2 mb-3 font-semibold">
+      {icon}
+      {title}
+    </div>
+
     <ul className="space-y-2">
-      {items.map((item, index) => (
-        <li key={index} className="flex items-start">
-          <span className="text-green-500 mr-3 mt-1">•</span>
-          <span className="text-gray-700">{item}</span>
+      {items.map((item, i) => (
+        <li key={i} className="text-gray-700 flex gap-2">
+          • {item}
         </li>
       ))}
     </ul>
