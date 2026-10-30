@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles, LogOut, Menu, X, ArrowUpRight, Compass } from 'lucide-react';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -13,132 +16,205 @@ const Navbar = () => {
     setIsMenuOpen(false);
   };
 
-  return (
-    <nav className="sticky top-0 left-0 right-0 z-40 transition-all duration-300 bg-gradient-to-t from-white/95 via-primary-50/50 to-primary-50 backdrop-blur-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 h-20 sm:h-16 lg:h-24 flex justify-between items-center">
-        {/* Logo */}
-        <div className="flex items-center gap-0.5 lg:gap-1 flex-shrink-0">
-          <Link to="/" className="flex items-center gap-4">
-            <div className="relative h-12 w-20 sm:h-14 sm:w-24 lg:h-16 lg:w-28 cursor-pointer">
-              <img 
-                src="/homepage/logo.png" 
-                alt="TravelIndia Logo" 
-                className="object-contain w-full h-full"
-              />
-            </div>
-            <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              TravelIndia
-            </span>
-          </Link>
-        </div>
+  const isActive = (path) => location.pathname === path;
 
-        {/* Desktop Menu */}
-        <div className="hidden xl:flex items-center gap-1 lg:gap-2">
-          <Link to="/">
-            <div className="relative px-4 py-2.5 rounded-xl font-semibold text-[15px] transition-colors cursor-pointer text-primary-700 bg-primary-50">
-              Home
-              <span className="absolute bottom-1 left-1/2 -translate-x-1/2 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full w-8"></span>
-            </div>
+  return (
+    <header className="sticky top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-100 transition-all">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex justify-between items-center">
+        {/* Brand Logo - Original logo.png restored */}
+        <Link to="/" className="flex items-center gap-3 group">
+          <div className="relative h-11 w-auto flex items-center justify-center">
+            <img 
+              src="/homepage/logo.png" 
+              alt="TravelIndia" 
+              className="h-10 sm:h-11 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+              onError={(e) => {
+                // If logo image not found, fallback gracefully
+                e.target.style.display = 'none';
+              }}
+            />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-1">
+              Travel<span className="text-emerald-600">India</span>
+            </span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest -mt-1">
+              AI Travel Planner
+            </span>
+          </div>
+        </Link>
+
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center gap-1.5 lg:gap-2">
+          <Link
+            to="/"
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+              isActive('/')
+                ? 'text-emerald-700 bg-emerald-50'
+                : 'text-slate-600 hover:text-emerald-700 hover:bg-slate-50'
+            }`}
+          >
+            Home
           </Link>
-          <Link to="/ai-assistant">
-            <div className="relative px-4 py-2.5 rounded-xl font-semibold text-[15px] transition-colors cursor-pointer text-neutral-700 hover:text-primary-700 hover:bg-primary-50/60">
-              AI Trip Assistant
-              <span className="absolute bottom-1 left-1/2 -translate-x-1/2 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full w-0 group-hover:w-8 transition-all duration-300"></span>
-            </div>
+
+          <Link
+            to="/ai-assistant"
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+              isActive('/ai-assistant')
+                ? 'text-emerald-700 bg-emerald-50'
+                : 'text-slate-600 hover:text-emerald-700 hover:bg-slate-50'
+            }`}
+          >
+            <Sparkles size={15} className="text-emerald-500" />
+            <span>AI Trip Planner</span>
           </Link>
-          
+
           {isAuthenticated && (
-            <Link to="/dashboard">
-              <div className="relative px-4 py-2.5 rounded-xl font-semibold text-[15px] transition-colors cursor-pointer text-neutral-700 hover:text-primary-700 hover:bg-primary-50/60">
-                My Trips
-              </div>
+            <Link
+              to="/dashboard"
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                isActive('/dashboard')
+                  ? 'text-emerald-700 bg-emerald-50'
+                  : 'text-slate-600 hover:text-emerald-700 hover:bg-slate-50'
+              }`}
+            >
+              My Trips
             </Link>
           )}
-          
+        </nav>
+
+        {/* Right Auth Section */}
+        <div className="hidden md:flex items-center gap-3">
           {isAuthenticated ? (
-            <div className="flex items-center gap-3 ml-2">
-              <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-gradient-to-r from-blue-50 to-purple-50">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
-                  <span className="text-white text-sm font-bold">
-                    {user?.username?.charAt(0).toUpperCase()}
-                  </span>
+            <div className="flex items-center gap-3">
+              <Link
+                to="/dashboard"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 hover:border-emerald-300 transition"
+              >
+                <div className="w-7 h-7 rounded-full bg-emerald-600 flex items-center justify-center text-white text-xs font-bold">
+                  {user?.profilePhoto ? (
+                    <img
+                      src={user.profilePhoto}
+                      alt={user?.username}
+                      className="w-full h-full rounded-full object-cover"
+                    />
+                  ) : (
+                    user?.username?.charAt(0).toUpperCase() || 'U'
+                  )}
                 </div>
-                <span className="text-sm font-medium text-gray-700">{user?.username}</span>
-              </div>
+                <span className="text-xs font-bold text-slate-800">{user?.username}</span>
+              </Link>
+
               <button
                 onClick={handleLogout}
-                className="px-5 py-2.5 rounded-full font-semibold text-sm border-2 transition-all duration-200 text-red-600 border-red-200 bg-white hover:bg-red-50 hover:border-red-400"
+                title="Sign Out"
+                className="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
               >
-                Logout
+                <LogOut size={17} />
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-3 ml-2">
-              <Link to="/login">
-                <button className="px-5 py-2.5 rounded-full font-semibold text-sm border-2 transition-all duration-200 text-gray-600 border-gray-200 bg-white hover:bg-gray-50">
-                  Login
-                </button>
+            <div className="flex items-center gap-2.5">
+              <Link
+                to="/login"
+                className="px-4 py-2 rounded-lg text-sm font-bold text-slate-700 hover:text-emerald-700 transition"
+              >
+                Log In
               </Link>
-              <Link to="/register">
-                <button className="px-5 py-2.5 rounded-full font-semibold text-sm border-2 transition-all duration-200 text-white bg-gradient-to-r from-blue-600 to-purple-600 border-transparent hover:shadow-lg hover:shadow-blue-500/25">
-                  Sign Up
-                </button>
+              <Link
+                to="/register"
+                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold shadow-sm transition active:scale-[0.98]"
+              >
+                Get Started
               </Link>
             </div>
           )}
         </div>
 
-        {/* Mobile Menu Button */}
+        {/* Mobile Hamburger Button */}
         <button
           onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="xl:hidden p-2 rounded-xl hover:bg-primary-50 transition-colors"
+          className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition"
         >
-          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            {isMenuOpen ? (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            )}
-          </svg>
+          {isMenuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
 
       {/* Mobile Menu */}
-      {isMenuOpen && (
-        <div className="xl:hidden bg-white/95 backdrop-blur-sm border-t border-gray-100 py-4 px-4">
-          <div className="flex flex-col space-y-2">
-            <Link to="/" className="px-4 py-3 rounded-xl text-gray-700 hover:bg-primary-50 hover:text-primary-700 font-medium" onClick={() => setIsMenuOpen(false)}>
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="md:hidden bg-white border-b border-slate-200 px-4 py-4 space-y-2 overflow-hidden"
+          >
+            <Link
+              to="/"
+              onClick={() => setIsMenuOpen(false)}
+              className={`block px-4 py-2.5 rounded-lg text-sm font-semibold ${
+                isActive('/') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700'
+              }`}
+            >
               Home
             </Link>
-            <Link to="/ai-assistant" className="px-4 py-3 rounded-xl text-gray-700 hover:bg-primary-50 hover:text-primary-700 font-medium" onClick={() => setIsMenuOpen(false)}>
-              AI Trip Assistant
+            <Link
+              to="/ai-assistant"
+              onClick={() => setIsMenuOpen(false)}
+              className={`block px-4 py-2.5 rounded-lg text-sm font-semibold ${
+                isActive('/ai-assistant') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700'
+              }`}
+            >
+              AI Trip Planner
             </Link>
             {isAuthenticated && (
-              <Link to="/dashboard" className="px-4 py-3 rounded-xl text-gray-700 hover:bg-primary-50 hover:text-primary-700 font-medium" onClick={() => setIsMenuOpen(false)}>
+              <Link
+                to="/dashboard"
+                onClick={() => setIsMenuOpen(false)}
+                className={`block px-4 py-2.5 rounded-lg text-sm font-semibold ${
+                  isActive('/dashboard') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700'
+                }`}
+              >
                 My Trips
               </Link>
             )}
-            {isAuthenticated ? (
-              <>
-                <div className="px-4 py-3 text-gray-500">Hello, {user?.username}</div>
-                <button onClick={handleLogout} className="px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 font-medium text-left">
-                  Logout
-                </button>
-              </>
-            ) : (
-              <>
-                <Link to="/login" className="px-4 py-3 rounded-xl text-gray-700 hover:bg-primary-50 font-medium" onClick={() => setIsMenuOpen(false)}>
-                  Login
-                </Link>
-                <Link to="/register" className="px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium text-center" onClick={() => setIsMenuOpen(false)}>
-                  Sign Up
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-    </nav>
+
+            <div className="pt-3 border-t border-slate-100">
+              {isAuthenticated ? (
+                <div className="flex items-center justify-between px-2 pt-1">
+                  <span className="text-xs font-semibold text-slate-500">
+                    Signed in as {user?.username}
+                  </span>
+                  <button
+                    onClick={handleLogout}
+                    className="text-xs font-bold text-rose-600 hover:underline"
+                  >
+                    Log Out
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <Link
+                    to="/login"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="py-2.5 rounded-lg border border-slate-200 text-center text-sm font-bold text-slate-700"
+                  >
+                    Log In
+                  </Link>
+                  <Link
+                    to="/register"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="py-2.5 rounded-lg bg-emerald-600 text-center text-sm font-bold text-white"
+                  >
+                    Sign Up
+                  </Link>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </header>
   );
 };
 

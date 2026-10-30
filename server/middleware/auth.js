@@ -16,7 +16,8 @@ const protect = async (req, res, next) => {
       });
     }
     
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const secret = process.env.JWT_SECRET || 'travelindia_secret_key_2026';
+    const decoded = jwt.verify(token, secret);
     const user = await User.findById(decoded.id).select('-password');
     
     if (!user) {
@@ -29,10 +30,10 @@ const protect = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
-    console.error('Auth error:', error);
+    console.error('Auth error:', error.message);
     res.status(401).json({
       success: false,
-      error: 'Not authorized, token failed'
+      error: 'Not authorized, token invalid or expired'
     });
   }
 };

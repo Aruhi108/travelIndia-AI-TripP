@@ -1,7 +1,7 @@
 {
   "name": "travelindia-client",
   "version": "1.0.0",
-  "proxy": "http://localhost:5001",
+  "proxy": "http://localhost:5005",
   "description": "AI-Powered Travel Planner for India - Frontend",
   "scripts": {
     "start": "react-scripts start",

@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }) => {
 
       console.log("✅ GetMe response:", response);
 
-      if (response.success) {
+      if (response && response.success) {
         setUser(response.user);
       } else {
         console.log("❌ GetMe failed, logging out");
@@ -52,58 +52,52 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Login
-  // Login - UPDATED to handle both cases
-const login = async (email, password) => {
-  try {
-    console.log("🔐 Login attempt for:", email);
-    const result = await authAPI.login({ email, password });
+  const login = async (email, password) => {
+    try {
+      console.log("🔐 Login attempt for:", email);
+      const result = await authAPI.login({ email, password });
+      const response = result?.data ? result.data : result;
+      
+      if (response && response.success) {
+        localStorage.setItem("token", response.token);
+        setToken(response.token);
+        setUser(response.user);
 
-    console.log("LOGIN RESULT:", result);
+        console.log("✅ Login successful! User:", response.user);
+        console.log("✅ Token saved:", response.token);
 
-    // Handle both cases: if axios returns full response or just data
-    const response = result.data ? result.data : result;
-    
-    if (response.success) {
-      localStorage.setItem("token", response.token);
-      setToken(response.token);
-      setUser(response.user);
-
-      console.log("✅ Login successful! User:", response.user);
-      console.log("✅ Token saved:", response.token);
-
-      return { success: true };
-    } else {
-      return { success: false, error: response.error };
+        return { success: true };
+      } else {
+        return { success: false, error: response?.error || "Invalid credentials" };
+      }
+    } catch (error) {
+      console.log("❌ LOGIN ERROR:", error);
+      return { success: false, error: error?.error || error?.message || "Login failed" };
     }
-
-  } catch (error) {
-    console.log("❌ LOGIN ERROR:", error);
-    return { success: false, error: error.error || "Login failed" };
-  }
-};
+  };
 
   // Register
   const register = async (data) => {
     try {
       console.log("📝 Registration attempt:", data.email);
-      const response = await authAPI.register(data);
+      const result = await authAPI.register(data);
+      const response = result?.data ? result.data : result;
 
-      if (response.success) {
+      if (response && response.success) {
         localStorage.setItem("token", response.token);
         setToken(response.token);
-        setUser(response.user);  // IMPORTANT: Set user immediately
+        setUser(response.user); // Set user immediately
         
         console.log("✅ Registration successful! User:", response.user);
-        
         return { success: true };
       } else {
-        return { success: false, error: response.error };
+        return { success: false, error: response?.error || "Registration failed" };
       }
     } catch (error) {
       console.log("❌ REGISTRATION ERROR:", error);
       return {
         success: false,
-        error: "Registration failed",
+        error: error?.error || error?.message || "Registration failed",
       };
     }
   };

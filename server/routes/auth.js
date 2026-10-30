@@ -6,8 +6,9 @@ const router = express.Router();
 
 // Generate JWT Token
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE
+  const secret = process.env.JWT_SECRET || 'travelindia_secret_key_2026';
+  return jwt.sign({ id }, secret, {
+    expiresIn: process.env.JWT_EXPIRE || '30d'
   });
 };
 
@@ -125,6 +126,9 @@ router.put('/profile', protect, async (req, res) => {
     const { username, profilePhoto } = req.body;
     
     const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
     if (username) user.username = username;
     if (profilePhoto !== undefined) user.profilePhoto = profilePhoto;
     

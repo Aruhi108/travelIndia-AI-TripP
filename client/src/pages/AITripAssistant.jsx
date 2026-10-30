@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { aiAPI } from '../utils/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 
-// Icons
 import {
   MapPin,
   Globe,
@@ -15,14 +15,27 @@ import {
   ArrowLeft,
   ExternalLink,
   RefreshCw,
-  Navigation
+  Navigation,
+  Calendar,
+  Shield,
+  Utensils,
+  LogIn,
+  CheckCircle2,
+  AlertCircle,
+  Briefcase
 } from 'lucide-react';
 
 const AITripAssistant = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
+
   const [formData, setFormData] = useState({
-    destination: '',
-    state: '',
-    homeLocation: ''
+    destination: location.state?.destination || '',
+    state: location.state?.state || '',
+    homeLocation: location.state?.homeLocation || '',
+    duration: location.state?.duration || '5 Days',
+    travelStyle: 'Comfort'
   });
 
   const [loading, setLoading] = useState(false);
@@ -31,8 +44,28 @@ const AITripAssistant = () => {
   const [generatedItinerary, setGeneratedItinerary] = useState(null);
   const [tripId, setTripId] = useState(null);
 
-  const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
+  useEffect(() => {
+    if (location.state?.destination) {
+      setFormData((prev) => ({
+        ...prev,
+        destination: location.state.destination,
+        state: location.state.state || prev.state,
+        homeLocation: location.state.homeLocation || prev.homeLocation
+      }));
+    }
+  }, [location.state]);
+
+  const popularDestinations = [
+    { name: 'Goa', state: 'Goa' },
+    { name: 'Manali', state: 'Himachal Pradesh' },
+    { name: 'Jaipur', state: 'Rajasthan' },
+    { name: 'Kerala', state: 'Kerala' },
+    { name: 'Varanasi', state: 'Uttar Pradesh' },
+    { name: 'Ladakh', state: 'Ladakh' }
+  ];
+
+  const travelStyles = ['Budget Backpacker', 'Comfort Explorer', 'Luxury Heritage', 'Family'];
+  const durations = ['3 Days', '5 Days', '7 Days', '10 Days'];
 
   const handleChange = (e) => {
     setFormData({
@@ -43,263 +76,436 @@ const AITripAssistant = () => {
     setInfoMessage('');
   };
 
+  const fillExample = (destination, state) => {
+    setFormData((prev) => ({
+      ...prev,
+      destination,
+      state,
+      homeLocation: prev.homeLocation || 'Delhi'
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!isAuthenticated) {
+      setError('Please sign in or create an account to save your generated itinerary.');
+      return;
+    }
+
+    if (!formData.destination.trim() || !formData.state.trim() || !formData.homeLocation.trim()) {
+      setError('Please fill in Destination, State, and your Starting City.');
+      return;
+    }
+
     setLoading(true);
     setError('');
-    setInfoMessage('');
+    setInfoMessage('Analyzing travel routes, stays, and attractions...');
     setGeneratedItinerary(null);
 
     try {
-      setInfoMessage('Preparing your personalized itinerary...');
-
       const response = await aiAPI.generateItinerary({
-        destination: formData.destination,
-        state: formData.state,
-        homeLocation: formData.homeLocation
+        destination: formData.destination.trim(),
+        state: formData.state.trim(),
+        homeLocation: formData.homeLocation.trim()
       });
 
-      if (response.success) {
-        setInfoMessage('Itinerary generated successfully!');
-        setGeneratedItinerary(response.itinerary);
-        setTripId(response.tripId);
-
-        setTimeout(() => setInfoMessage(''), 2000);
+      if (response && response.success) {
+        setInfoMessage('Itinerary crafted successfully! Redirecting...');
+        // Immediate redirect to the full itinerary view page
+        navigate(`/itinerary/${response.tripId}`);
       } else {
-        setError(response.error || 'Failed to generate itinerary');
+        setError(response?.error || 'Failed to generate itinerary. Please try again.');
       }
     } catch (err) {
-      setError('Network error. Try again later.');
+      console.error('Generation error:', err);
+      setError(err?.error || 'Unable to connect to planner server. Please check backend status.');
     } finally {
       setLoading(false);
     }
   };
 
-  const popularDestinations = [
-    { name: 'Goa', state: 'Goa' },
-    { name: 'Manali', state: 'Himachal Pradesh' },
-    { name: 'Jaipur', state: 'Rajasthan' },
-    { name: 'Kerala', state: 'Kerala' }
-  ];
-
-  const fillExample = (destination, state) => {
-    setFormData({
-      destination,
-      state,
-      homeLocation: 'Delhi'
-    });
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 py-12">
+    <div className="min-h-screen bg-slate-50 py-10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6">
+        
+        {/* Top Navigation */}
+        <div className="flex items-center justify-between mb-8">
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white px-3.5 py-2 rounded-lg border border-slate-200 shadow-sm transition"
+          >
+            <ArrowLeft size={15} />
+            <span>Back</span>
+          </button>
 
-      {/* BACK BUTTON */}
-      <div className="max-w-4xl mx-auto px-4 mb-6">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-gray-700 hover:text-black transition"
-        >
-          <ArrowLeft size={18} />
-          Back
-        </button>
-      </div>
+          {!isAuthenticated && (
+            <Link
+              to="/login"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3.5 py-1.5 rounded-lg border border-emerald-200 transition"
+            >
+              <LogIn size={13} />
+              <span>Sign In to Save Trips</span>
+            </Link>
+          )}
+        </div>
 
-      <div className="max-w-4xl mx-auto px-4">
-
-        {/* HEADER CARD */}
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold text-gray-800 mb-3">
-            AI Trip Assistant
+        {/* Heading */}
+        <div className="text-center max-w-xl mx-auto mb-8">
+          <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1 rounded-md">
+            AI Assistant
+          </span>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-2 mb-2">
+            Trip Assistant
           </h1>
-          <p className="text-gray-600">
-            Get your personalized travel itinerary
+          <p className="text-slate-600 text-sm">
+            Enter your destination and origin city to generate a customized travel itinerary with budget estimates and verified links.
           </p>
         </div>
 
-        {/* POPULAR DESTINATIONS */}
-        <div className="flex flex-wrap gap-2 justify-center mb-8">
+        {/* Quick Pick Chips */}
+        <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
+          <span className="text-xs text-slate-400 font-medium">Quick Pick:</span>
           {popularDestinations.map((dest, i) => (
             <button
               key={i}
+              type="button"
               onClick={() => fillExample(dest.name, dest.state)}
-              className="px-4 py-2 bg-white border rounded-full text-sm hover:bg-gray-50 transition"
+              className="px-3 py-1 bg-white border border-slate-200 hover:border-emerald-500 hover:text-emerald-700 rounded-full text-xs font-medium text-slate-700 transition"
             >
-              {dest.name}, {dest.state}
+              {dest.name}
             </button>
           ))}
         </div>
 
-        {/* MAIN CARD */}
-        <div className="bg-white rounded-3xl shadow-xl p-6 md:p-10 border">
-
-          {/* INFO */}
+        {/* Main Planner Card */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 sm:p-8 mb-8">
+          
           {infoMessage && (
-            <div className="mb-4 p-4 rounded-xl bg-green-50 border border-green-200 flex items-center gap-3">
-              <Sparkles className="text-green-600" />
-              <p className="text-green-700">{infoMessage}</p>
+            <div className="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs sm:text-sm flex items-center gap-2.5">
+              <CheckCircle2 size={18} className="text-emerald-600 flex-shrink-0" />
+              <span>{infoMessage}</span>
             </div>
           )}
 
-          {/* ERROR */}
           {error && (
-            <div className="mb-4 p-4 rounded-xl bg-red-50 border border-red-200">
-              <p className="text-red-700">{error}</p>
+            <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs sm:text-sm flex items-center gap-2.5">
+              <AlertCircle size={18} className="text-rose-600 flex-shrink-0" />
+              <span>{error}</span>
             </div>
           )}
 
-          {/* FORM */}
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              {/* Destination */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+                  Destination *
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <MapPin size={16} />
+                  </div>
+                  <input
+                    type="text"
+                    name="destination"
+                    required
+                    value={formData.destination}
+                    onChange={handleChange}
+                    placeholder="e.g. Goa, Manali, Jaipur"
+                    className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+                  />
+                </div>
+              </div>
 
-            <Input
-              icon={<MapPin size={18} />}
-              label="Destination"
-              name="destination"
-              value={formData.destination}
-              onChange={handleChange}
-              placeholder="Goa, Manali..."
-            />
+              {/* State */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+                  State / Region *
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <Globe size={16} />
+                  </div>
+                  <input
+                    type="text"
+                    name="state"
+                    required
+                    value={formData.state}
+                    onChange={handleChange}
+                    placeholder="e.g. Rajasthan, Goa"
+                    className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+                  />
+                </div>
+              </div>
 
-            <Input
-              icon={<Globe size={18} />}
-              label="State"
-              name="state"
-              value={formData.state}
-              onChange={handleChange}
-              placeholder="Rajasthan, Kerala..."
-            />
+              {/* Home Location */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+                  Departure City *
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <Home size={16} />
+                  </div>
+                  <input
+                    type="text"
+                    name="homeLocation"
+                    required
+                    value={formData.homeLocation}
+                    onChange={handleChange}
+                    placeholder="e.g. Delhi, Mumbai"
+                    className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+                  />
+                </div>
+              </div>
+            </div>
 
-            <Input
-              icon={<Home size={18} />}
-              label="Home Location"
-              name="homeLocation"
-              value={formData.homeLocation}
-              onChange={handleChange}
-              placeholder="Delhi, Mumbai..."
-            />
-<button
-  type="submit"
-  disabled={loading || !isAuthenticated}
-  className="w-full h-12 rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:scale-[1.02] transition flex items-center justify-center gap-2 disabled:opacity-60"
->
-  {loading ? (
-    <>
-      <LoadingSpinner size="small" showText={false} />
-      <span>Generating...</span>
-    </>
-  ) : (
-    <span>Generate AI Itinerary</span>
-  )}
-</button>
+            {/* Travel Duration & Style */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-1">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+                  Duration
+                </label>
+                <div className="grid grid-cols-4 gap-2">
+                  {durations.map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, duration: d })}
+                      className={`py-2 rounded-lg text-xs font-semibold transition ${
+                        formData.duration === d
+                          ? 'bg-emerald-600 text-white shadow-sm'
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      }`}
+                    >
+                      {d}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+                  Travel Style
+                </label>
+                <div className="grid grid-cols-4 gap-2">
+                  {travelStyles.map((style) => (
+                    <button
+                      key={style}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, travelStyle: style })}
+                      className={`py-2 px-1 text-center rounded-lg text-xs font-semibold truncate transition ${
+                        formData.travelStyle === style
+                          ? 'bg-emerald-600 text-white shadow-sm'
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      }`}
+                    >
+                      {style.split(' ')[0]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-sm transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+              >
+                {loading ? (
+                  <>
+                    <LoadingSpinner size="small" showText={false} />
+                    <span>Formulating Itinerary...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={17} />
+                    <span>Generate AI Itinerary</span>
+                  </>
+                )}
+              </button>
+            </div>
           </form>
         </div>
 
-        {/* GENERATED ITINERARY CARD */}
+        {/* GENERATED RESULTS (CLEAN, SPACIOUS, WITH DIRECT EXTERNAL LINKS) */}
         {generatedItinerary && (
-          <div className="mt-10 bg-white rounded-3xl shadow-xl p-6 md:p-10 border">
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-2xl border border-slate-200 shadow-md p-6 sm:p-8 space-y-6"
+          >
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-slate-100 gap-4">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md">
+                  Itinerary Formulated
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-2">
+                  {formData.destination}, {formData.state}
+                </h2>
+                <p className="text-xs text-slate-500 mt-1">
+                  Origin: {formData.homeLocation} • Duration: {formData.duration}
+                </p>
+              </div>
 
-            {/* HEADER */}
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-800">
-                Your Trip Plan
-              </h2>
-
-              <Link
-                to={`/itinerary/${tripId}`}
-                className="flex items-center gap-2 text-blue-600 font-semibold"
-              >
-                View Full
-                <ExternalLink size={16} />
-              </Link>
+              {tripId && (
+                <Link
+                  to={`/itinerary/${tripId}`}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-sm"
+                >
+                  <span>Open Full View / PDF</span>
+                  <ExternalLink size={14} />
+                </Link>
+              )}
             </div>
 
-            <p className="text-gray-700 mb-6">
-              {generatedItinerary.overview}
-            </p>
-
-            {/* GRID INFO */}
-            <div className="grid md:grid-cols-2 gap-4">
-
-              <InfoCard
-                icon={<Navigation />}
-                title="Top Places"
-                items={generatedItinerary.places}
-              />
-
-              <InfoCard
-                icon={<DollarSign />}
-                title="Cost"
-                text={generatedItinerary.estimatedCost}
-              />
-
-              <InfoCard
-                icon={<Hotel />}
-                title="Best Time"
-                text={generatedItinerary.bestTime}
-              />
-
+            {/* Overview */}
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                Overview
+              </h3>
+              <p className="text-slate-700 text-sm leading-relaxed">
+                {generatedItinerary.overview}
+              </p>
             </div>
 
-            {/* ACTIONS */}
-            <div className="flex gap-4 mt-8">
-              <Link
-                to={`/itinerary/${tripId}`}
-                className="flex-1 text-center py-3 rounded-xl bg-blue-600 text-white font-semibold"
-              >
-                Open Full Itinerary
-              </Link>
+            {/* Key Specs Matrix */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                <span className="text-xs text-slate-400 uppercase font-bold block mb-1">
+                  Estimated Budget
+                </span>
+                <span className="text-sm font-extrabold text-slate-900">
+                  {generatedItinerary.estimatedCost}
+                </span>
+              </div>
 
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                <span className="text-xs text-slate-400 uppercase font-bold block mb-1">
+                  Best Time to Visit
+                </span>
+                <span className="text-sm font-semibold text-slate-900">
+                  {generatedItinerary.bestTime}
+                </span>
+              </div>
+
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                <span className="text-xs text-slate-400 uppercase font-bold block mb-1">
+                  Route Advice
+                </span>
+                <a
+                  href={`https://www.google.com/search?q=${encodeURIComponent(formData.homeLocation + ' to ' + formData.destination + ' travel routes')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-bold text-emerald-700 hover:underline flex items-center gap-1 mt-1"
+                >
+                  <span>Check Trains & Flights</span>
+                  <ExternalLink size={12} />
+                </a>
+              </div>
+            </div>
+
+            {/* Top Attractions with Verified Google Search Links */}
+            {Array.isArray(generatedItinerary.places) && generatedItinerary.places.length > 0 && (
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+                  Attractions & Places
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {generatedItinerary.places.map((place, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between gap-3"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-6 h-6 rounded-md bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center justify-center flex-shrink-0">
+                          {idx + 1}
+                        </span>
+                        <span className="text-xs sm:text-sm font-semibold text-slate-800">
+                          {place}
+                        </span>
+                      </div>
+                      <a
+                        href={`https://www.google.com/search?q=${encodeURIComponent(place + ' ' + formData.destination + ' tourism')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline flex items-center gap-1 flex-shrink-0"
+                      >
+                        <span>Details</span>
+                        <ExternalLink size={11} />
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Recommended Stays with Google Maps Links */}
+            {Array.isArray(generatedItinerary.hotels) && generatedItinerary.hotels.length > 0 && (
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+                  Recommended Accommodations
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {generatedItinerary.hotels.map((hotel, idx) => (
+                    <div
+                      key={idx}
+                      className="p-4 rounded-xl border border-slate-200 bg-white flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between text-xs text-amber-600 font-bold mb-1">
+                          <span>⭐ {hotel.rating || 4.5}</span>
+                          <span className="text-slate-400 text-[10px]">Tier #{idx + 1}</span>
+                        </div>
+                        <h4 className="font-bold text-slate-900 text-sm mb-1">{hotel.name}</h4>
+                        <p className="text-xs text-emerald-700 font-semibold mb-3">{hotel.priceRange}</p>
+                      </div>
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hotel.name + ' ' + formData.destination)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="pt-2 border-t border-slate-100 text-[11px] font-bold text-emerald-700 hover:text-emerald-900 flex items-center justify-between"
+                      >
+                        <span>View on Maps</span>
+                        <ExternalLink size={12} />
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Bottom Actions */}
+            <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row gap-3">
+              {tripId && (
+                <Link
+                  to={`/itinerary/${tripId}`}
+                  className="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm text-center shadow-sm transition"
+                >
+                  View Full Itinerary & Export PDF
+                </Link>
+              )}
               <button
                 onClick={() => {
                   setGeneratedItinerary(null);
                   setTripId(null);
                 }}
-                className="px-6 py-3 rounded-xl bg-gray-100 hover:bg-gray-200"
+                className="px-5 py-3 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs sm:text-sm hover:bg-slate-50 transition flex items-center justify-center gap-1.5"
               >
-                <RefreshCw size={18} />
+                <RefreshCw size={15} />
+                <span>Plan Another</span>
               </button>
             </div>
-
-          </div>
+          </motion.div>
         )}
 
       </div>
     </div>
   );
 };
-
-/* ---------- INPUT COMPONENT ---------- */
-const Input = ({ icon, label, ...props }) => (
-  <div>
-    <label className="text-sm font-semibold text-gray-600 mb-2 flex items-center gap-2">
-      {icon}
-      {label}
-    </label>
-    <input
-      {...props}
-      className="w-full border rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none"
-    />
-  </div>
-);
-
-/* ---------- INFO CARD ---------- */
-const InfoCard = ({ icon, title, text, items }) => (
-  <div className="p-4 rounded-2xl border bg-gray-50">
-    <div className="flex items-center gap-2 mb-2 font-semibold text-gray-700">
-      {icon}
-      {title}
-    </div>
-
-    {items ? (
-      <ul className="text-sm text-gray-600 list-disc ml-5">
-        {items.slice(0, 4).map((i, idx) => (
-          <li key={idx}>{i}</li>
-        ))}
-      </ul>
-    ) : (
-      <p className="text-gray-600 text-sm">{text}</p>
-    )}
-  </div>
-);
 
 export default AITripAssistant;
