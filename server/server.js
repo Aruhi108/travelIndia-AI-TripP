@@ -16,10 +16,28 @@ const adminRoutes = require("./routes/admin");
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// Middleware - Robust CORS for public deployments & local dev
+const corsOptions = {
+  origin: true,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+};
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Root health check endpoint for deployment monitoring
+app.get("/", (req, res) => {
+  res.json({
+    status: "OK",
+    message: "TravelIndia AI Trip Planner API is online",
+    version: "1.0.0",
+    health: "/api/health"
+  });
+});
 
 // Logging middleware
 app.use((req, res, next) => {
