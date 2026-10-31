@@ -1,6 +1,24 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5005/api';
+// Determine API base URL dynamically:
+// 1. If explicit REACT_APP_API_URL is configured (e.g. Render/Railway backend URL in Vercel), use it.
+// 2. If running on public domain (e.g. travelindia-rosy.vercel.app), use relative '/api' to avoid loopback/CORS blocks.
+// 3. If running locally on development computer, use http://localhost:5005/api.
+const getApiBaseUrl = () => {
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL.replace(/\/$/, "");
+  }
+  if (
+    typeof window !== "undefined" &&
+    window.location.hostname !== "localhost" &&
+    window.location.hostname !== "127.0.0.1"
+  ) {
+    return "/api";
+  }
+  return "http://localhost:5005/api";
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Create axios instance with LONGER timeout
 const api = axios.create({
