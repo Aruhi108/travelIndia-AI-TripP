@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "dev": "npm run server",
     "start": "node server/server.js",
     "server": "node server/server.js",
     "client": "npm start --prefix client",
@@ -18,4 +19,3 @@
     "mongoose": "^8.0.0"
   }
 }
-

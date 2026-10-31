@@ -75,6 +75,7 @@ connectDB();
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/auth", authRoutes); // Added to support legacy client calls
 app.use("/api/ai", aiRoutes);
 app.use("/api/trips", tripsRoutes);
 app.use("/api/admin", adminRoutes);
