@@ -50,6 +50,7 @@ const primaryUri = process.env.MONGODB_URI;
 const localFallbackUri = "mongodb://127.0.0.1:27017/travelindia";
 
 const connectDB = async () => {
+  if (mongoose.connection.readyState === 1) return;
   if (primaryUri) {
     try {
       console.log("🔄 Connecting to configured MongoDB...");
@@ -73,12 +74,23 @@ const connectDB = async () => {
 
 connectDB();
 
-// Routes
+// Middleware to ensure DB connection is ready on serverless calls
+app.use(async (req, res, next) => {
+  if (mongoose.connection.readyState !== 1) {
+    await connectDB();
+  }
+  next();
+});
+
+// Routes - Mounted on both /api and root prefix for resilience with reverse proxies & serverless
 app.use("/api/auth", authRoutes);
-app.use("/auth", authRoutes); // Added to support legacy client calls
+app.use("/auth", authRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/ai", aiRoutes);
 app.use("/api/trips", tripsRoutes);
+app.use("/trips", tripsRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/admin", adminRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {
